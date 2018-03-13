@@ -1,1 +1,1 @@
-# bids-smartdiff-git
+This project extends the "Smart Diff" functionality of the "BI Developer Extensions" project (https://github.com/bideveloperextensions) to git. The source code has been compiled using Visual Studio 2015. Look in the Install directory for a compiled binary and installation instructions.

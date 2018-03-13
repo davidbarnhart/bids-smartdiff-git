@@ -1,0 +1,25 @@
+Quick Guide (Currently Windows-only):
+
+1. Install WinMerge (this tool currently uses WinMerge to display file differences).
+2. Copy "Smartdiff.exe" to somewhere within the system path. For instance, during the WinMerge installation, the setup guide typically asks if you want to add the WinMerge program folder to the system path. If you answered yes, then you could simply copy "Smartdiff.exe" to the WinMerge program folder.
+3. Configure git to use "Smartdiff.exe" as a difftool. Within the .gitconfig file, add the following lines:
+
+[diff]
+
+	tool = smartdiff
+
+[difftool "smartdiff"]
+	
+	cmd = Smartdiff.exe $LOCAL $REMOTE
+
+[difftool]
+	
+	prompt = false
+
+Long Guide
+
+This tool attempts to port the "Smart Diff" parsing functionality within the BI Developer Extensions toolset (https://github.com/bideveloperextensions), formerly known as "BIDS Helper", to the Git environment. Within the Microsoft business intelligence/database stack, multiple applications save their files as xml. Although xml is a step forward from the archaic binary file format used by SQL Server 2000 for its "DTS" ETL package format, these xml files have historically still been difficult for most source control solutions to work with. Because of quirks within the file formats, it has been difficult to use traditional text merge/comparison tools.
+
+"Smart diff" is an xml processing routine that reformats the xml files so that they can be easily compared against prior versions. This helps identify any material changes made to a file/functionality. Previously this functionality was only available as a Visual Studio extension. The project breaks out the parsing functionality into a simple command-line tool so that git can leverage it during diff comparisons.
+
+In the initial implementation of this project, the files are parsed and saved into temporary files. Then WinMerge is executed against those two temporary files. This is a pretty crude implementation. Hopefully with a little more work the project will be extended to support other file comparison utilities. In addition, the code could be rewritten to be cross-platform.
