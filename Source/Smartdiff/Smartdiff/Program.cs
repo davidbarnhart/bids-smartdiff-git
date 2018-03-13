@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,51 +17,69 @@ namespace Smartdiff
 
         static void Main(string[] args)
         {
-            string FileNameA = args[0];
-            string FileNameB = args[1];
-
-            //get the XSLT for this file extension
-            string sXslt = null;
-            string sProjectItemFileName = FileNameA.ToLower();
-            bool bNewLineOnAttributes = true;
-            foreach (string extension in DTS_FILE_EXTENSIONS)
+            if (args.Length == 2)
             {
-                if (sProjectItemFileName.EndsWith(extension))
+                string FileNameA = args[0];
+                string FileNameB = args[1];
+
+                if (File.Exists(FileNameA) && File.Exists(FileNameB))
                 {
+                    //get the XSLT for this file extension
+                    string sXslt = null;
+                    string sProjectItemFileName = FileNameA.ToLower();
+                    bool bNewLineOnAttributes = true;
+                    bool supportedFormat = false;
 
-                    sXslt = Smartdiff.Properties.Resources.SmartDiffDtsx;
-                    break;
+                    foreach (string extension in DTS_FILE_EXTENSIONS)
+                    {
+                        if (sProjectItemFileName.EndsWith(extension))
+                        {
+
+                            sXslt = Smartdiff.Properties.Resources.SmartDiffDtsx;
+                            supportedFormat = true;
+                            break;
+                        }
+                    }
+                    foreach (string extension in SSAS_FILE_EXTENSIONS)
+                    {
+                        if (sProjectItemFileName.EndsWith(extension))
+                        {
+                            sXslt = Smartdiff.Properties.Resources.SmartDiffSSAS;
+                            supportedFormat = true;
+                            break;
+                        }
+                    }
+                    foreach (string extension in SSRS_FILE_EXTENSIONS)
+                    {
+                        if (sProjectItemFileName.EndsWith(extension))
+                        {
+                            sXslt = Smartdiff.Properties.Resources.SmartDiffSSRS;
+                            bNewLineOnAttributes = false;
+                            supportedFormat = true;
+                            break;
+                        }
+                    }
+
+                    string tempPath = System.IO.Path.GetTempPath();
+                    string tempFileA = tempPath + System.IO.Path.GetFileName(FileNameA) + "." + DateTime.Now.Ticks.ToString() + ".Left";
+                    string tempFileB = tempPath + System.IO.Path.GetFileName(FileNameB) + "." + DateTime.Now.Ticks.ToString() + ".Right";
+
+                    System.IO.File.Copy(FileNameA, tempFileA, true);
+                    System.IO.File.Copy(FileNameB, tempFileB, true);
+
+                    // only run the smart diff parsing on one of the supported formats. otherwise leave the file untouched
+                    if (supportedFormat)
+                    {
+                        PrepXmlForDiff(tempFileA, sXslt, bNewLineOnAttributes);
+                        PrepXmlForDiff(tempFileB, sXslt, bNewLineOnAttributes);
+                    }
+                    System.Diagnostics.Process.Start("CMD.exe", "/C WinmergeU.exe -e \"" + tempFileA + "\" \"" + tempFileB + "\"");
                 }
+                else
+                    Console.WriteLine("Could not find file(s) {0} or {1}", FileNameA, FileNameB);
             }
-            foreach (string extension in SSAS_FILE_EXTENSIONS)
-            {
-                if (sProjectItemFileName.EndsWith(extension))
-                {
-                    sXslt = Smartdiff.Properties.Resources.SmartDiffSSAS;
-                    break;
-                }
-            }
-            foreach (string extension in SSRS_FILE_EXTENSIONS)
-            {
-                if (sProjectItemFileName.EndsWith(extension))
-                {
-                    sXslt = Smartdiff.Properties.Resources.SmartDiffSSRS;
-                    bNewLineOnAttributes = false;
-                    break;
-                }
-            }
-
-            string tempFileA = System.IO.Path.GetTempFileName();
-            string tempFileB = System.IO.Path.GetTempFileName();
-
-            System.IO.File.Copy(FileNameA, tempFileA, true);
-            System.IO.File.Copy(FileNameB, tempFileB, true);
-
-            PrepXmlForDiff(tempFileA, sXslt, bNewLineOnAttributes);
-            PrepXmlForDiff(tempFileB, sXslt, bNewLineOnAttributes);
-
-            System.Diagnostics.Process.Start("CMD.exe", "/C WinmergeU.exe -e \"" + tempFileA + "\" \"" + tempFileB + "\"");
-
+            else
+                Console.WriteLine("This tool requires two arguments. Each must be the full path to a valid file.");
         }
 
         private static void PrepXmlForDiff(string sFilename, string sXSL, bool bNewLineOnAttributes)
